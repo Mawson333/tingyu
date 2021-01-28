@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mawson.mapper.HostMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.mawson.pojo.Host">
+        <!--    host的数据    -->
+        <id column="hid" property="hid" />
+        <result column="hname" property="hname" />
+        <result column="hpwd" property="hpwd" />
+        <result column="hphone" property="hphone" />
+        <result column="starttime" property="starttime" />
+        <result column="status" property="status" />
+        <result column="strong" property="strong" />
+        <result column="ordernumber" property="ordernumber" />
+
+        <!--    hostpower的数据  -->
+        <association property="hostPower" javaType="com.mawson.pojo.HostPower">
+            <id column="hpid" property="hpid"></id>
+            <result column="hpstar" property="hpstar" />
+            <result column="hpstart_begindate" property="hpstartBegindate" />
+            <result column="hpstar_enddate" property="hpstarEnddate" />
+            <result column="hp_order_power" property="hpOrderPower" />
+            <result column="hpstar_begintime" property="hpstarBegintime" />
+            <result column="hpstar_endtime" property="hpstarEndtime" />
+            <result column="hpdiscount" property="hpdiscount" />
+            <result column="hp_dis_starttime" property="hpDisStarttime" />
+            <result column="hp_dis_endtime" property="hpDisEndtime" />
+            <result column="hpprice" property="hpprice" />
+            <result column="hpcosts" property="hpcosts" />
+            <result column="hostid" property="hostid" />
+        </association>
+    </resultMap>
+
+    <select id="selectHostInfo" resultMap="BaseResultMap">
+        select * from t_host h left join t_host_power p on
+        h.hid = p.hostid
+        <!--    条件查询直接在后进写 -->
+        <where>
+            <!--       姓名 模糊查询     -->
+            <if test="hostCondition.hname != '' and hostCondition.hname != null">
+                and  h.hname like concat('%',#{hostCondition.hname},'%')
+            </if>
+            <!--       状态 status     -->
+            <if test="hostCondition.status != '' and hostCondition.status != null">
+                and  h.status = #{hostCondition.status}
+            </if>
+            <!--       星推荐 hp表     -->
+            <if test="hostCondition.hpstar != '' and hostCondition.hpstar != null">
+                and  p.hpstar = #{hostCondition.hpstar}
+            </if>
+            <!--       折扣 hp表     -->
+            <if test="hostCondition.hpdiscount != '' and hostCondition.hpdiscount != null">
+                and  p.hpdiscount = #{hostCondition.hpdiscount}
+            </if>
+        </where>
+        <!--       权重 排序      -->
+        order by h.strong
+        <if test="hostCondition.strong != '' and hostCondition.strong != null">
+            ${hostCondition.strong}
+        </if>
+    </select>
+</mapper>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+<!--    导入 数据库配置properties-->
+    <context:property-placeholder location="classpath:db.properties"></context:property-placeholder>
+
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driverClassName}"></property>
+        <property name="url" value="${jdbc.url}"></property>
+        <property name="username" value="${jdbc.username}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+    </bean>
+
+<!--    包扫描 -->
+    <context:component-scan base-package="com.mawson">
+    </context:component-scan>
+
+<!--
+        整合mp  和之前的操作一样 只需要 把sqlSessionFactory改成 mp的  MybatisSqlSessionFactoryBean 其他的地方都不需要改
+-->
+    <bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
+<!--        01 数据库连接要素-->
+        <property name="dataSource" ref="dataSource"></property>
+        <property name="typeAliasesPackage" value="com.mawson.bean"></property>
+
+        <!-- 配置分页的插件-->
+        <!-- 配置mp的分页插件-->
+        <property name="plugins">
+            <array>
+                <!--配置分页插件:拦截对象-->
+                <bean class="com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor">
+                    <property name="dbType" value="MYSQL"></property><!--指明要进行分页操作的数据库-->
+                </bean>
+            </array>
+        </property>
+
+        <!--配置全局策略-->
+        <property name="globalConfig" ref="globalConfig"></property>
+    </bean>
+
+    <!--配置mp的全局策略-->
+    <bean id="globalConfig" class="com.baomidou.mybatisplus.core.config.GlobalConfig">
+        <!--配置数据库全局默认的映射关系-->
+        <property name="dbConfig">
+            <bean id="dbConfig" class="com.baomidou.mybatisplus.core.config.GlobalConfig$DbConfig">
+                <!--声明全局默认类名的对应的表的前缀-->
+                <property name="tablePrefix" value="t_"></property>
+                <!--配置全局主键自增-->
+                <property name="idType" value="AUTO"></property>
+            </bean>
+        </property>
+    </bean>
+
+    <!--    mapper的扫描 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.mawson.mapper"></property>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+    </bean>
+
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 注入数据源 -->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- spring事务配置 -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+
+        <!-- 事务属性配置 -->
+        <tx:attributes>
+            <!-- DQL ：查询操作，配置只读事务 -->
+            <tx:method name="get*" read-only="true" isolation="REPEATABLE_READ" propagation="REQUIRED"/>
+            <tx:method name="select*" read-only="true" isolation="REPEATABLE_READ" propagation="REQUIRED"/>
+            <tx:method name="find*" read-only="true" isolation="REPEATABLE_READ" propagation="REQUIRED"/>
+            <tx:method name="query*" read-only="true" isolation="REPEATABLE_READ" propagation="REQUIRED"/>
+            <!-- 其他 SQL ：非只读事务 -->
+            <tx:method name="*" read-only="false" isolation="REPEATABLE_READ" propagation="REQUIRED"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!--  配置aop 切入事务 -->
+    <aop:config>
+        <!--   切点   -->
+        <aop:pointcut id="pc" expression="execution(* com.mawson.service.*.*(..))"/>
+        <!--   通知   -->
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="pc"></aop:advisor>
+    </aop:config>
+
+</beans>
