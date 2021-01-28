@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import com.baomidou.mybatisplus.annotation.TableId;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import java.time.LocalDateTime;
 import java.io.Serializable;
 
@@ -33,8 +35,10 @@ public class Order extends Model<Order> {
 
     private String hoteladdress;
 
+//    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime ordertime;
 
+//    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime weddingTime;
 
     private String weddingSplit;
